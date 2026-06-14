@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowDown, ArrowUp, Equal, GitCompareArrows } from "lucide-react";
-import { getGates, getMetrics, metricLabels, versions, type MetricKey, type VersionId } from "@/lib/eval";
+import { getDecision, getGates, getMetrics, metricLabels, metricRubric, scenarios, versions, type MetricKey, type VersionId } from "@/lib/eval";
 import { MetricValue, Panel, StatusBadge } from "@/components/ui";
 
 const rows: Array<{ key: MetricKey; type?: "percent" | "count" | "ms" | "cost" }> = [
@@ -14,10 +14,35 @@ export function CompareView() {
   const baseline = getMetrics("v1-production");
   const metrics = getMetrics(candidate);
   const gates = getGates(candidate);
+  const decision = getDecision(candidate);
+  const failedGates = gates.filter((gate) => !gate.passed);
   const config = versions[candidate].config;
   const baseConfig = versions["v1-production"].config;
   return <div className="space-y-5">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><div className="flex items-center gap-2 text-xs text-slate-500"><GitCompareArrows size={13} />Iteration quality analysis</div><h1 className="mt-2 text-2xl font-semibold tracking-tight">Compare versions</h1><p className="mt-1 text-sm text-slate-400">See exactly why each agent version moves closer to production readiness.</p></div><select aria-label="Compare candidate" value={candidate} onChange={(e) => setCandidate(e.target.value as VersionId)} className="h-9 rounded-md border border-white/10 bg-[#111722] px-3 text-sm"><option value="v2-candidate">v1-production vs v2-candidate</option><option value="v3-improved">v1-production vs v3-improved</option><option value="v4-release">v1-production vs v4-release</option></select></div>
+
+    <div className="grid gap-3 md:grid-cols-4">
+      <Panel className="p-4"><div className="text-[10px] uppercase tracking-[.14em] text-slate-500">Release decision</div><div className="mt-3"><StatusBadge status={decision} /></div><p className="mt-3 text-xs leading-5 text-slate-400">{decision === "promoted" ? "Every blocking gate passed." : `${failedGates.length} blocking gate${failedGates.length === 1 ? "" : "s"} failed.`}</p></Panel>
+      <Panel className="p-4"><div className="text-[10px] uppercase tracking-[.14em] text-slate-500">Eval suite</div><div className="mt-2 font-mono text-2xl font-semibold">{scenarios.length}</div><p className="mt-1 text-xs leading-5 text-slate-400">Factual, multi-doc, abstention, access-control, conflict, and adversarial cases.</p></Panel>
+      <Panel className="p-4"><div className="text-[10px] uppercase tracking-[.14em] text-slate-500">Metrics judged</div><div className="mt-2 font-mono text-2xl font-semibold">{rows.length}</div><p className="mt-1 text-xs leading-5 text-slate-400">Quality, evidence, safety, security, latency, and cost.</p></Panel>
+      <Panel className="p-4"><div className="text-[10px] uppercase tracking-[.14em] text-slate-500">Zero-tolerance</div><div className="mt-2 font-mono text-2xl font-semibold">{metrics.accessViolations + metrics.unsafeAnswers}</div><p className="mt-1 text-xs leading-5 text-slate-400">Access violations plus unsafe confident answers must remain at zero.</p></Panel>
+    </div>
+
+    <Panel className="overflow-hidden">
+      <div className="border-b border-white/8 px-5 py-4"><div className="text-sm font-medium">Evaluation rubric</div><div className="mt-1 text-xs text-slate-500">What AgentCI judges before a RAG agent can ship.</div></div>
+      <div className="grid gap-px bg-white/6 md:grid-cols-2 xl:grid-cols-5">
+        {rows.map(({ key, type }) => {
+          const rubric = metricRubric[key];
+          const gate = gates.find((item) => item.metric === key);
+          return <div key={key} className="bg-[#0e1219] p-4">
+            <div className="flex items-start justify-between gap-3"><div><div className="text-[10px] uppercase tracking-[.14em] text-slate-600">{rubric.category}</div><div className="mt-1 text-sm font-medium text-slate-200">{metricLabels[key]}</div></div>{gate && <StatusBadge status={gate.passed ? "passed" : "failed"} />}</div>
+            <p className="mt-3 min-h-12 text-xs leading-5 text-slate-400">{rubric.description}</p>
+            <div className="mt-3 rounded border border-white/8 bg-white/[.02] p-2 font-mono text-[11px] text-slate-400"><MetricValue value={metrics[key]} type={type} /><span className="ml-2 text-slate-600">{gate?.threshold ?? rubric.gate}</span></div>
+          </div>;
+        })}
+      </div>
+    </Panel>
+
     <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
       <Panel className="overflow-hidden">
         <div className="grid grid-cols-[1.35fr_.75fr_.75fr_.65fr_1fr_.55fr] border-b border-white/8 bg-white/[.02] px-5 py-3 text-[10px] uppercase tracking-[.12em] text-slate-500"><div>Metric</div><div>Production</div><div>Candidate</div><div>Delta</div><div>Required gate</div><div>Status</div></div>
