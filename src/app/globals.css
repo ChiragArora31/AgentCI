@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+html { background: #090b10; color-scheme: dark; }
+body { margin: 0; background: #090b10; color: #f1f5f9; font-family: "Geist", ui-sans-serif, system-ui, sans-serif; }
+button, select { cursor: pointer; }
+button:disabled, select:disabled { cursor: not-allowed; }
+::selection { background: rgba(103, 232, 249, .24); }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, .18); border-radius: 999px; }
+
+html[data-theme="light"] { background: #f3f6fa; color-scheme: light; }
+html[data-theme="light"] body { background: #f3f6fa; color: #172033; }
+html[data-theme="light"] .bg-\[\#090b10\] { background-color: #f3f6fa !important; }
+html[data-theme="light"] .bg-\[\#090b10\]\/95 { background-color: rgb(243 246 250 / .95) !important; }
+html[data-theme="light"] .bg-\[\#0c0f15\],
+html[data-theme="light"] .bg-\[\#0e1219\],
+html[data-theme="light"] .bg-\[\#111722\],
+html[data-theme="light"] .bg-\[\#090c12\] { background-color: #ffffff !important; }
+html[data-theme="light"] .text-slate-100,
+html[data-theme="light"] .text-slate-200,
+html[data-theme="light"] .text-slate-300,
+html[data-theme="light"] .text-white { color: #172033 !important; }
+html[data-theme="light"] .text-slate-400 { color: #526078 !important; }
+html[data-theme="light"] .text-slate-500,
+html[data-theme="light"] .text-slate-600,
+html[data-theme="light"] .text-slate-700 { color: #718096 !important; }
+html[data-theme="light"] .border-white\/6,
+html[data-theme="light"] .border-white\/8,
+html[data-theme="light"] .border-white\/10 { border-color: rgb(15 23 42 / .12) !important; }
+html[data-theme="light"] .bg-white\/\[\.02\],
+html[data-theme="light"] .bg-white\/\[\.025\],
+html[data-theme="light"] .bg-white\/\[\.03\],
+html[data-theme="light"] .bg-white\/\[\.05\],
+html[data-theme="light"] .bg-white\/8 { background-color: rgb(15 23 42 / .04) !important; }
