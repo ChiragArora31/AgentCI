@@ -76,7 +76,7 @@ export function PipelineRun() {
       )}
 
       <Panel className="overflow-hidden">
-        <div className="border-b border-white/8 px-5 py-4"><div className="text-sm font-medium">Release pipeline</div><div className="mt-1 text-xs text-slate-500">Seeded replay · same evaluation contract as production</div></div>
+        <div className="border-b border-white/8 px-5 py-4"><div className="text-sm font-medium">Release pipeline</div><div className="mt-1 text-xs text-slate-500">Production replay · same evaluation contract as the release gate</div></div>
         <div className="grid grid-cols-2 gap-px bg-white/8 md:grid-cols-4 xl:grid-cols-7">
           {stages.map((name, index) => {
             const done = index < stage;

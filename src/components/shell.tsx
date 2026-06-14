@@ -30,7 +30,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="mt-auto border-t border-white/8 p-4">
-          <div className="text-[10px] uppercase tracking-[.15em] text-slate-500">Demo agent</div>
+          <div className="text-[10px] uppercase tracking-[.15em] text-slate-500">Monitored agent</div>
           <div className="mt-2 text-sm font-medium">Enterprise RAG Assistant</div>
           <div className="mt-1 flex items-center gap-2 text-xs text-emerald-400"><span className="size-1.5 rounded-full bg-emerald-400" />v1-production healthy</div>
         </div>

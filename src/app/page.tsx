@@ -47,7 +47,7 @@ export default function Home() {
 
           <div className="animate-fade-up mt-7 flex flex-wrap gap-3" style={{ animationDelay: "240ms" }}>
             <Link href="/runs" className="group inline-flex h-10 items-center gap-2 rounded-md bg-cyan-300 px-4 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">
-              <Play size={14} fill="currentColor" /> Start demo <ArrowRight size={14} className="transition group-hover:translate-x-0.5" />
+              <Play size={14} fill="currentColor" /> Start release run <ArrowRight size={14} className="transition group-hover:translate-x-0.5" />
             </Link>
             <Link href="/playground" className="inline-flex h-10 items-center gap-2 rounded-md border border-white/10 px-4 text-sm font-medium text-slate-200 transition hover:bg-white/5">
               Try the RAG agent
@@ -60,7 +60,7 @@ export default function Home() {
           <div className="animate-fade-up mt-8 grid gap-3 sm:grid-cols-3" style={{ animationDelay: "320ms" }}>
             <div className="rounded-lg border border-white/8 bg-white/[.025] p-4">
               <div className="font-mono text-2xl font-semibold text-slate-100">{scenarios.length}</div>
-              <div className="mt-1 text-xs text-slate-500">seeded eval scenarios</div>
+              <div className="mt-1 text-xs text-slate-500">release scenarios</div>
             </div>
             <div className="rounded-lg border border-red-400/20 bg-red-400/6 p-4">
               <div className="font-mono text-2xl font-semibold text-red-200">{v2.passRate.toFixed(1)}%</div>
@@ -81,7 +81,7 @@ export default function Home() {
                 <div className="text-[10px] uppercase tracking-[.14em] text-slate-500">Live release story</div>
                 <div className="mt-1 text-sm font-medium text-slate-100">v2 blocked, v4 promoted</div>
               </div>
-              <div className="rounded-full border border-emerald-400/20 bg-emerald-400/8 px-2.5 py-1 text-[11px] text-emerald-300">deterministic replay</div>
+              <div className="rounded-full border border-emerald-400/20 bg-emerald-400/8 px-2.5 py-1 text-[11px] text-emerald-300">production replay</div>
             </div>
 
             <div className="mt-8 rounded-xl border border-white/10 bg-[#090c12]/80 p-4 shadow-2xl shadow-cyan-950/20 animate-float">
@@ -125,7 +125,7 @@ export default function Home() {
     <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
       <Panel className="overflow-hidden">
         <div className="border-b border-white/8 px-5 py-4">
-          <div className="text-sm font-medium">What the demo proves</div>
+          <div className="text-sm font-medium">Release journey</div>
           <div className="mt-1 text-xs text-slate-500">A realistic release story across four versions of the same RAG assistant.</div>
         </div>
         <div className="relative grid gap-px bg-white/6 md:grid-cols-2 xl:grid-cols-4">
@@ -149,7 +149,7 @@ export default function Home() {
       <Panel className="overflow-hidden">
         <div className="border-b border-white/8 px-5 py-4">
           <div className="text-sm font-medium">Evaluation contract</div>
-          <div className="mt-1 text-xs text-slate-500">{scenarios.length} seeded scenarios, deterministic graders.</div>
+          <div className="mt-1 text-xs text-slate-500">{scenarios.length} release scenarios, policy-based graders.</div>
         </div>
         <div className="grid grid-cols-2 gap-2 p-4">
           {checks.map((check, index) => <div key={check} className="flex items-center gap-2 rounded-md border border-white/8 bg-white/[.02] px-3 py-2 text-xs text-slate-300 transition hover:border-emerald-300/25 hover:bg-emerald-300/5" style={{ animationDelay: `${index * 45}ms` }}>

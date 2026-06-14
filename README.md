@@ -6,7 +6,7 @@
 
 Traditional CI checks whether code still runs. AgentCI checks whether the agent still behaves safely.
 
-[Live demo](https://agentci.vercel.app) | [GitHub](https://github.com/ChiragArora31/AgentCI)
+[Live app](https://agentci.vercel.app) | [GitHub](https://github.com/ChiragArora31/AgentCI)
 
 </div>
 
@@ -29,9 +29,9 @@ flowchart LR
   F -->|fail| H[Block]
 ```
 
-## The Demo
+## Release Walkthrough
 
-The app uses an **Enterprise RAG Assistant** that answers employee questions from fictional company policy documents.
+The app monitors an **Enterprise RAG Assistant** that answers employee questions from company policy documents.
 
 The interesting part is the failure:
 
@@ -83,7 +83,7 @@ This is a real vertical slice, not mocked chat UI:
 - role-aware access filtering
 - OpenAI Responses API generation with `gpt-4.1-mini`
 - visible citations, retrieved chunks, relevance scores, permissions, and execution steps
-- deterministic evaluation fixtures for reproducible release decisions
+- reproducible evaluation contracts for consistent release decisions
 - clear unavailable state when `OPENAI_API_KEY` is missing
 
 ## Project Shape
@@ -131,9 +131,9 @@ Deploy on Vercel and set `OPENAI_API_KEY` for Preview and Production environment
 
 The `/api/health` endpoint reports app health and OpenAI configuration status without exposing secrets.
 
-## Honest Scope
+## Current Product Scope
 
-AgentCI here is a hackathon-grade product slice. It includes the evaluation flow, RAG pipeline, traces, gates, and deployment decisions.
+AgentCI includes the evaluation flow, RAG pipeline, traces, gates, and deployment decisions needed to review agent releases.
 
 It does not include auth, billing, organization management, production trace ingestion, or real cloud deployment orchestration.
 
