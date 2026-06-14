@@ -11,12 +11,13 @@ const userRoles = new Set<UserRole>(["employee", "engineer", "hr"]);
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as { query?: unknown; versionId?: unknown; role?: unknown };
+    const body = await request.json() as { query?: unknown; versionId?: unknown; role?: unknown; userRole?: unknown };
     const query = typeof body.query === "string" ? body.query.trim() : "";
-    if (!query || query.length > 1_000 || !versionIds.has(body.versionId as VersionId) || !userRoles.has(body.role as UserRole)) {
+    const role = body.role ?? body.userRole;
+    if (!query || query.length > 1_000 || !versionIds.has(body.versionId as VersionId) || !userRoles.has(role as UserRole)) {
       return NextResponse.json({ error: "Provide a query under 1,000 characters, a valid version, and a valid role." }, { status: 400 });
     }
-    return NextResponse.json(await executeRealRag(query, body.versionId as VersionId, body.role as UserRole), {
+    return NextResponse.json(await executeRealRag(query, body.versionId as VersionId, role as UserRole), {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {

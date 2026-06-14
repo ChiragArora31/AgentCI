@@ -12,7 +12,7 @@ export function FailuresView({ initialCandidate, initialScenario }: { initialCan
   const rows = getFailureRows(candidate);
   const filtered = rows.filter((r) => (severity === "all" || r.failure.severity === severity) && (category === "all" || r.scenario.category === category));
   const [selected, setSelected] = useState(initialScenario && rows.some((r) => r.scenario.id === initialScenario) ? initialScenario : rows.find((r) => r.failure.severity === "critical")?.scenario.id ?? rows[0]?.scenario.id);
-  const effectiveSelected = rows.some((r) => r.scenario.id === selected) ? selected! : rows[0]?.scenario.id;
+  const effectiveSelected = filtered.some((r) => r.scenario.id === selected) ? selected! : filtered[0]?.scenario.id;
   const trace = effectiveSelected ? getTrace(candidate, effectiveSelected) : null;
 
   function changeCandidate(value: VersionId) {
