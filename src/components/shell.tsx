@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Bot, Braces, GitCompareArrows, Rocket, ShieldCheck } from "lucide-react";
+import { Activity, Bot, Braces, GitCompareArrows, Home, Rocket, ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const nav = [
-  { href: "/", label: "Runs", icon: Activity },
+  { href: "/", label: "Home", icon: Home },
+  { href: "/runs", label: "Runs", icon: Activity },
   { href: "/playground", label: "Playground", icon: Bot },
   { href: "/compare", label: "Compare", icon: GitCompareArrows },
   { href: "/failures", label: "Failures", icon: ShieldCheck },
