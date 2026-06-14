@@ -6,6 +6,10 @@ AgentCI is a release-control platform for AI agents. It evaluates every proposed
 
 Our hackathon demonstration uses an **Enterprise RAG Assistant** that answers employee questions from company policy documents. A candidate optimized for speed passes conventional build checks but becomes confidently wrong, misses evidence, and exposes a restricted HR document. AgentCI catches the regressions, blocks deployment, identifies the configuration changes that caused them, and safely promotes the corrected version.
 
+**Live demo:** [agentci.vercel.app](https://agentci.vercel.app)
+
+**Source:** [github.com/ChiragArora31/AgentCI](https://github.com/ChiragArora31/AgentCI)
+
 ---
 
 ## Presentation-Agent Brief
