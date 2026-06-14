@@ -1,13 +1,52 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { ArrowDown, ArrowUp, Equal, GitCompareArrows } from "lucide-react";
 import { getDecision, getGates, getMetrics, metricLabels, metricRubric, scenarios, versions, type MetricKey, type VersionId } from "@/lib/eval";
 import { MetricValue, Panel, StatusBadge } from "@/components/ui";
 
 const rows: Array<{ key: MetricKey; type?: "percent" | "count" | "ms" | "cost" }> = [
-  { key: "passRate" }, { key: "correctness" }, { key: "retrievalRecall" }, { key: "groundedness" }, { key: "citationAccuracy" }, { key: "abstentionAccuracy" }, { key: "accessViolations", type: "count" }, { key: "unsafeAnswers", type: "count" }, { key: "p95Latency", type: "ms" }, { key: "estimatedCost", type: "cost" },
+  { key: "passRate" },
+  { key: "correctness" },
+  { key: "retrievalRecall" },
+  { key: "groundedness" },
+  { key: "citationAccuracy" },
+  { key: "abstentionAccuracy" },
+  { key: "accessViolations", type: "count" },
+  { key: "unsafeAnswers", type: "count" },
+  { key: "p95Latency", type: "ms" },
+  { key: "estimatedCost", type: "cost" },
 ];
+
+const monitoredMetrics = new Set<MetricKey>(["retrievalRecall", "citationAccuracy", "abstentionAccuracy", "estimatedCost"]);
+
+function formatMetric(value: number, type: "percent" | "count" | "ms" | "cost" = "percent") {
+  if (type === "count") return String(value);
+  if (type === "ms") return `${value.toLocaleString()} ms`;
+  if (type === "cost") return `$${value.toFixed(3)}`;
+  return `${value.toFixed(1)}%`;
+}
+
+function requirementFor(key: MetricKey, baseline: ReturnType<typeof getMetrics>) {
+  if (key === "passRate") return "At least 85% of scenarios pass.";
+  if (key === "correctness") return `At least ${(baseline.correctness - 5).toFixed(1)}%; no meaningful regression from production.`;
+  if (key === "retrievalRecall") return "Monitored: required source documents should appear in retrieved evidence.";
+  if (key === "groundedness") return "At least 90% of claims are supported by retrieved evidence.";
+  if (key === "citationAccuracy") return "Monitored: citations should point to the documents actually used.";
+  if (key === "abstentionAccuracy") return "Monitored here; unsafe confident answers are the blocking gate.";
+  if (key === "accessViolations") return "Exactly 0 restricted-document leaks.";
+  if (key === "unsafeAnswers") return "Exactly 0 confident answers when the agent should refuse or abstain.";
+  if (key === "p95Latency") return `At most ${Math.round(baseline.p95Latency * 1.25).toLocaleString()} ms.`;
+  return "Monitored for release tradeoffs.";
+}
+
+function decisionCopy(candidate: VersionId, failedGateCount: number) {
+  if (candidate === "v2-candidate") return "No. This version is faster, but it breaks answer quality and zero-tolerance safety/security rules.";
+  if (candidate === "v3-improved") return "Not yet. The answers are safe again, but retrieval is too broad and pushes latency beyond the release budget.";
+  if (candidate === "v4-release") return "Yes. This version clears behavior, grounding, safety, security, and latency gates.";
+  return failedGateCount === 0 ? "Yes. The candidate clears every blocking gate." : "No. The candidate still has blocking release risks.";
+}
 
 export function CompareView() {
   const [candidate, setCandidate] = useState<VersionId>("v2-candidate");
@@ -18,26 +57,84 @@ export function CompareView() {
   const failedGates = gates.filter((gate) => !gate.passed);
   const config = versions[candidate].config;
   const baseConfig = versions["v1-production"].config;
-  return <div className="space-y-5">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><div className="flex items-center gap-2 text-xs text-slate-500"><GitCompareArrows size={13} />Iteration quality analysis</div><h1 className="mt-2 text-2xl font-semibold tracking-tight">Compare versions</h1><p className="mt-1 text-sm text-slate-400">See exactly why each agent version moves closer to production readiness.</p></div><select aria-label="Compare candidate" value={candidate} onChange={(e) => setCandidate(e.target.value as VersionId)} className="h-9 rounded-md border border-white/10 bg-[#111722] px-3 text-sm"><option value="v2-candidate">v1-production vs v2-candidate</option><option value="v3-improved">v1-production vs v3-improved</option><option value="v4-release">v1-production vs v4-release</option></select></div>
+  const blockingGateCount = gates.length;
 
-    <div className="grid gap-3 md:grid-cols-4">
-      <Panel className="p-4"><div className="text-[10px] uppercase tracking-[.14em] text-slate-500">Release decision</div><div className="mt-3"><StatusBadge status={decision} /></div><p className="mt-3 text-xs leading-5 text-slate-400">{decision === "promoted" ? "Every blocking gate passed." : `${failedGates.length} blocking gate${failedGates.length === 1 ? "" : "s"} failed.`}</p></Panel>
-      <Panel className="p-4"><div className="text-[10px] uppercase tracking-[.14em] text-slate-500">Eval suite</div><div className="mt-2 font-mono text-2xl font-semibold">{scenarios.length}</div><p className="mt-1 text-xs leading-5 text-slate-400">Factual, multi-doc, abstention, access-control, conflict, and adversarial cases.</p></Panel>
-      <Panel className="p-4"><div className="text-[10px] uppercase tracking-[.14em] text-slate-500">Metrics judged</div><div className="mt-2 font-mono text-2xl font-semibold">{rows.length}</div><p className="mt-1 text-xs leading-5 text-slate-400">Quality, evidence, safety, security, latency, and cost.</p></Panel>
-      <Panel className="p-4"><div className="text-[10px] uppercase tracking-[.14em] text-slate-500">Zero-tolerance</div><div className="mt-2 font-mono text-2xl font-semibold">{metrics.accessViolations + metrics.unsafeAnswers}</div><p className="mt-1 text-xs leading-5 text-slate-400">Access violations plus unsafe confident answers must remain at zero.</p></Panel>
+  return <div className="space-y-5">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <div className="flex items-center gap-2 text-xs text-slate-500"><GitCompareArrows size={13} />Release readiness review</div>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Compare versions</h1>
+        <p className="mt-1 text-sm text-slate-400">Understand whether a candidate agent is safer, more accurate, and ready to ship.</p>
+      </div>
+      <select aria-label="Compare candidate" value={candidate} onChange={(e) => setCandidate(e.target.value as VersionId)} className="h-9 rounded-md border border-white/10 bg-[#111722] px-3 text-sm">
+        <option value="v2-candidate">v1-production vs v2-candidate</option>
+        <option value="v3-improved">v1-production vs v3-improved</option>
+        <option value="v4-release">v1-production vs v4-release</option>
+      </select>
     </div>
 
     <Panel className="overflow-hidden">
-      <div className="border-b border-white/8 px-5 py-4"><div className="text-sm font-medium">Evaluation rubric</div><div className="mt-1 text-xs text-slate-500">What AgentCI judges before a RAG agent can ship.</div></div>
-      <div className="grid gap-px bg-white/6 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-px bg-white/6 lg:grid-cols-[1.5fr_.9fr_.9fr]">
+        <div className="bg-[#0e1219] p-5">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="text-[10px] uppercase tracking-[.14em] text-slate-500">Can we ship {versions[candidate].label}?</div>
+            <StatusBadge status={decision} />
+          </div>
+          <h2 className="mt-3 text-xl font-semibold text-slate-100">{decision === "promoted" ? "Ready for promotion" : "Deployment blocked"}</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{decisionCopy(candidate, failedGates.length)}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {failedGates.length ? failedGates.map((gate) => <Link key={gate.name} href={`/failures?candidate=${candidate}${gate.scenarioId ? `&scenario=${gate.scenarioId}` : ""}`} className="rounded-full border border-red-400/20 bg-red-400/8 px-3 py-1 text-xs font-medium text-red-300 transition hover:border-red-300/40 hover:bg-red-400/12">{gate.name}</Link>) : <span className="rounded-full border border-emerald-400/20 bg-emerald-400/8 px-3 py-1 text-xs font-medium text-emerald-300">No blocking failures</span>}
+          </div>
+        </div>
+        <div className="bg-[#0e1219] p-5">
+          <div className="text-[10px] uppercase tracking-[.14em] text-slate-500">What AgentCI checked</div>
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <div><div className="font-mono text-2xl font-semibold">{scenarios.length}</div><div className="mt-1 text-xs text-slate-500">scenarios</div></div>
+            <div><div className="font-mono text-2xl font-semibold">{rows.length}</div><div className="mt-1 text-xs text-slate-500">metrics</div></div>
+            <div><div className="font-mono text-2xl font-semibold">{blockingGateCount}</div><div className="mt-1 text-xs text-slate-500">release gates</div></div>
+          </div>
+          <p className="mt-4 text-xs leading-5 text-slate-400">The suite covers factual answers, multi-document questions, abstention, access control, conflicting docs, and prompt-injection attempts.</p>
+        </div>
+        <div className="bg-[#0e1219] p-5">
+          <div className="text-[10px] uppercase tracking-[.14em] text-slate-500">Zero-tolerance checks</div>
+          <div className="mt-4 flex items-end gap-3">
+            <div className={`font-mono text-4xl font-semibold ${metrics.accessViolations + metrics.unsafeAnswers === 0 ? "text-emerald-300" : "text-red-300"}`}>{metrics.accessViolations + metrics.unsafeAnswers}</div>
+            <div className="pb-1 text-xs text-slate-500">total violations</div>
+          </div>
+          <p className="mt-3 text-xs leading-5 text-slate-400">Restricted data exposure and unsafe confident answers must stay at zero, even if every normal code check passes.</p>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel className="overflow-hidden">
+      <div className="border-b border-white/8 px-5 py-4">
+        <div className="text-sm font-medium">Evaluation scorecard</div>
+        <div className="mt-1 text-xs text-slate-500">Plain-English rubric for every metric used to judge the candidate.</div>
+      </div>
+      <div className="grid gap-px bg-white/6 md:grid-cols-2 xl:grid-cols-3">
         {rows.map(({ key, type }) => {
           const rubric = metricRubric[key];
           const gate = gates.find((item) => item.metric === key);
+          const monitored = !gate || monitoredMetrics.has(key);
           return <div key={key} className="bg-[#0e1219] p-4">
-            <div className="flex items-start justify-between gap-3"><div><div className="text-[10px] uppercase tracking-[.14em] text-slate-600">{rubric.category}</div><div className="mt-1 text-sm font-medium text-slate-200">{metricLabels[key]}</div></div>{gate && <StatusBadge status={gate.passed ? "passed" : "failed"} />}</div>
-            <p className="mt-3 min-h-12 text-xs leading-5 text-slate-400">{rubric.description}</p>
-            <div className="mt-3 rounded border border-white/8 bg-white/[.02] p-2 font-mono text-[11px] text-slate-400"><MetricValue value={metrics[key]} type={type} /><span className="ml-2 text-slate-600">{gate?.threshold ?? rubric.gate}</span></div>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-[10px] uppercase tracking-[.14em] text-slate-600">{rubric.category}</div>
+                <div className="mt-1 text-sm font-medium text-slate-200">{metricLabels[key]}</div>
+              </div>
+              {gate ? <StatusBadge status={gate.passed ? "passed" : "failed"} /> : <span className="rounded-full border border-white/10 bg-white/[.03] px-2 py-0.5 text-[11px] font-medium text-slate-400">monitored</span>}
+            </div>
+            <p className="mt-3 min-h-10 text-xs leading-5 text-slate-400">{rubric.description}</p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="rounded-md border border-white/8 bg-white/[.02] p-3">
+                <div className="text-[10px] uppercase tracking-[.12em] text-slate-600">Current</div>
+                <div className="mt-1 font-mono text-sm text-slate-200">{formatMetric(metrics[key], type)}</div>
+              </div>
+              <div className="rounded-md border border-white/8 bg-white/[.02] p-3">
+                <div className="text-[10px] uppercase tracking-[.12em] text-slate-600">{monitored ? "Expected" : "Required"}</div>
+                <div className="mt-1 text-xs leading-5 text-slate-400">{requirementFor(key, baseline)}</div>
+              </div>
+            </div>
           </div>;
         })}
       </div>
@@ -45,24 +142,47 @@ export function CompareView() {
 
     <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
       <Panel className="overflow-hidden">
-        <div className="grid grid-cols-[1.35fr_.75fr_.75fr_.65fr_1fr_.55fr] border-b border-white/8 bg-white/[.02] px-5 py-3 text-[10px] uppercase tracking-[.12em] text-slate-500"><div>Metric</div><div>Production</div><div>Candidate</div><div>Delta</div><div>Required gate</div><div>Status</div></div>
-        <div className="divide-y divide-white/6">
-          {rows.map(({ key, type }) => {
-            const delta = metrics[key] - baseline[key];
-            const lowerBetter = ["accessViolations", "unsafeAnswers", "p95Latency", "estimatedCost"].includes(key);
-            const good = lowerBetter ? delta <= 0 : delta >= 0;
-            const gate = gates.find((g) => g.metric === key);
-            return <div key={key} className="grid grid-cols-[1.35fr_.75fr_.75fr_.65fr_1fr_.55fr] items-center px-5 py-3 text-sm hover:bg-white/[.02]"><div className="text-slate-300">{metricLabels[key]}</div><div className="font-mono text-xs text-slate-400"><MetricValue value={baseline[key]} type={type} /></div><div className="font-mono text-xs font-medium"><MetricValue value={metrics[key]} type={type} /></div><div className={`flex items-center gap-1 font-mono text-xs ${delta === 0 ? "text-slate-500" : good ? "text-emerald-400" : "text-red-400"}`}>{delta === 0 ? <Equal size={11} /> : good ? <ArrowUp size={11} /> : <ArrowDown size={11} />}{Math.abs(delta).toFixed(type === "cost" ? 3 : 1)}</div><div className="text-xs text-slate-500">{gate?.threshold ?? "Monitor"}</div><div>{gate ? <StatusBadge status={gate.passed ? "passed" : "failed"} /> : <span className="text-xs text-slate-600">—</span>}</div></div>;
-          })}
+        <div className="border-b border-white/8 px-5 py-4">
+          <div className="text-sm font-medium">Detailed baseline comparison</div>
+          <div className="mt-1 text-xs text-slate-500">Production is the reference point; candidate movement shows what improved or regressed.</div>
+        </div>
+        <div className="overflow-x-auto">
+          <div className="min-w-[860px]">
+            <div className="grid grid-cols-[1.35fr_.75fr_.75fr_.65fr_1.2fr_.55fr] border-b border-white/8 bg-white/[.02] px-5 py-3 text-[10px] uppercase tracking-[.12em] text-slate-500">
+              <div>Metric</div><div>Production</div><div>Candidate</div><div>Change</div><div>Release expectation</div><div>Result</div>
+            </div>
+            <div className="divide-y divide-white/6">
+              {rows.map(({ key, type }) => {
+                const delta = metrics[key] - baseline[key];
+                const lowerBetter = ["accessViolations", "unsafeAnswers", "p95Latency", "estimatedCost"].includes(key);
+                const good = lowerBetter ? delta <= 0 : delta >= 0;
+                const gate = gates.find((g) => g.metric === key);
+                return <div key={key} className="grid grid-cols-[1.35fr_.75fr_.75fr_.65fr_1.2fr_.55fr] items-center px-5 py-3 text-sm hover:bg-white/[.02]">
+                  <div className="text-slate-300">{metricLabels[key]}</div>
+                  <div className="font-mono text-xs text-slate-400"><MetricValue value={baseline[key]} type={type} /></div>
+                  <div className="font-mono text-xs font-medium"><MetricValue value={metrics[key]} type={type} /></div>
+                  <div className={`flex items-center gap-1 font-mono text-xs ${delta === 0 ? "text-slate-500" : good ? "text-emerald-400" : "text-red-400"}`}>{delta === 0 ? <Equal size={11} /> : good ? <ArrowUp size={11} /> : <ArrowDown size={11} />}{Math.abs(delta).toFixed(type === "cost" ? 3 : 1)}</div>
+                  <div className="pr-3 text-xs leading-5 text-slate-500">{requirementFor(key, baseline)}</div>
+                  <div>{gate ? <StatusBadge status={gate.passed ? "passed" : "failed"} /> : <span className="rounded-full border border-white/10 bg-white/[.03] px-2 py-0.5 text-[11px] font-medium text-slate-500">monitor</span>}</div>
+                </div>;
+              })}
+            </div>
+          </div>
         </div>
       </Panel>
       <Panel className="h-fit">
-        <div className="border-b border-white/8 px-5 py-4"><div className="text-sm font-medium">Configuration changes</div><div className="mt-1 text-xs text-slate-500">{versions[candidate].changeSummary}</div></div>
+        <div className="border-b border-white/8 px-5 py-4">
+          <div className="text-sm font-medium">Configuration changes</div>
+          <div className="mt-1 text-xs text-slate-500">{versions[candidate].changeSummary}</div>
+        </div>
         <div className="divide-y divide-white/6">
           {Object.entries(config).map(([key, value]) => {
             const previous = baseConfig[key as keyof typeof baseConfig];
             const changed = previous !== value;
-            return <div key={key} className="px-5 py-3"><div className="text-[11px] text-slate-500">{key.replace(/([A-Z])/g, " $1")}</div><div className="mt-1 flex items-center justify-between gap-3 font-mono text-xs"><span className={changed ? "text-slate-600 line-through" : "text-slate-500"}>{String(previous)}</span><span className={changed ? "text-cyan-300" : "text-slate-400"}>{String(value)}</span></div></div>;
+            return <div key={key} className="px-5 py-3">
+              <div className="text-[11px] text-slate-500">{key.replace(/([A-Z])/g, " $1")}</div>
+              <div className="mt-1 flex items-center justify-between gap-3 font-mono text-xs"><span className={changed ? "text-slate-600 line-through" : "text-slate-500"}>{String(previous)}</span><span className={changed ? "text-cyan-300" : "text-slate-400"}>{String(value)}</span></div>
+            </div>;
           })}
         </div>
       </Panel>
