@@ -6,7 +6,7 @@ import type { VersionId } from "@/lib/eval";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-const versionIds = new Set<VersionId>(["v1-production", "v2-candidate", "v3-fixed"]);
+const versionIds = new Set<VersionId>(["v1-production", "v2-candidate", "v3-improved", "v4-release"]);
 const userRoles = new Set<UserRole>(["employee", "engineer", "hr"]);
 
 export async function POST(request: Request) {

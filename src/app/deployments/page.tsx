@@ -2,7 +2,7 @@ import { GitCommitHorizontal, Rocket } from "lucide-react";
 import { getDecision, getMetrics, versions, type VersionId } from "@/lib/eval";
 import { Panel, StatusBadge } from "@/components/ui";
 
-const history: VersionId[] = ["v3-fixed", "v2-candidate", "v1-production"];
+const history: VersionId[] = ["v4-release", "v3-improved", "v2-candidate", "v1-production"];
 
 export default function DeploymentsPage() {
   return <div className="space-y-5"><div><div className="flex items-center gap-2 text-xs text-slate-500"><Rocket size={13} />Enterprise Knowledge Assistant</div><h1 className="mt-2 text-2xl font-semibold tracking-tight">Deployments</h1><p className="mt-1 text-sm text-slate-400">Version history and evaluation-backed release decisions.</p></div>

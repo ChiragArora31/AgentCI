@@ -53,8 +53,9 @@ export function PipelineRun() {
         <div className="flex flex-wrap items-center gap-2">
           <label className="text-xs text-slate-500">Candidate</label>
           <select aria-label="Candidate version" value={candidate} disabled={running} onChange={(e) => { setCandidate(e.target.value as VersionId); setStage(0); }} className="h-9 rounded-md border border-white/10 bg-[#111722] px-3 text-sm outline-none focus:border-cyan-400/50">
-            <option value="v2-candidate">v2-candidate · regressed</option>
-            <option value="v3-fixed">v3-fixed · safety restored</option>
+            <option value="v2-candidate">v2-candidate · inaccurate</option>
+            <option value="v3-improved">v3-improved · accurate but slow</option>
+            <option value="v4-release">v4-release · production-ready</option>
           </select>
           <button onClick={reset} disabled={running} className="flex h-9 items-center gap-2 rounded-md border border-white/10 px-3 text-sm text-slate-300 hover:bg-white/5 disabled:opacity-40"><RotateCcw size={14} />Reset</button>
           <button onClick={run} disabled={running} className="flex h-9 items-center gap-2 rounded-md bg-cyan-300 px-4 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60"><Play size={14} fill="currentColor" />{running ? "Evaluating…" : "Run evaluation"}</button>
@@ -67,10 +68,10 @@ export function PipelineRun() {
             <div className={`mt-0.5 flex size-9 items-center justify-center rounded-full ${decision === "blocked" ? "bg-red-400/15 text-red-300" : "bg-emerald-400/15 text-emerald-300"}`}>{decision === "blocked" ? <ShieldAlert size={19} /> : <Sparkles size={19} />}</div>
             <div>
               <h2 className="text-lg font-semibold">{decision === "blocked" ? "Deployment blocked" : "Candidate promoted"}</h2>
-              <p className="mt-1 text-sm text-slate-300">{decision === "blocked" ? `${criticalCount} critical regressions and ${failedGates.length} quality gates failed. Faster is not safer.` : `All critical gates passed; overall reliability improved by ${(metrics.passRate - baseline.passRate).toFixed(1)} points.`}</p>
+              <p className="mt-1 text-sm text-slate-300">{decision === "blocked" ? criticalCount > 0 ? `${criticalCount} critical behavior regressions and ${failedGates.length} release gates failed. The agent is not safe to ship.` : `The answer quality improved, but ${failedGates.length} release gate still failed. Accurate is not enough if the agent is too slow for production.` : `All behavior and release gates passed; reliability improved by ${(metrics.passRate - baseline.passRate).toFixed(1)} points.`}</p>
             </div>
           </div>
-          <Link href={decision === "blocked" ? `/failures?candidate=${candidate}&scenario=E07` : "/deployments"} className={`flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium ${decision === "blocked" ? "border-red-300/30 text-red-200 hover:bg-red-300/10" : "border-emerald-300/30 text-emerald-200 hover:bg-emerald-300/10"}`}>{decision === "blocked" ? "Inspect critical failure" : "View deployment"}<ArrowRight size={14} /></Link>
+          <Link href={decision === "blocked" ? criticalCount > 0 ? `/failures?candidate=${candidate}&scenario=E07` : "/compare" : "/deployments"} className={`flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium ${decision === "blocked" ? "border-red-300/30 text-red-200 hover:bg-red-300/10" : "border-emerald-300/30 text-emerald-200 hover:bg-emerald-300/10"}`}>{decision === "blocked" ? criticalCount > 0 ? "Inspect failed answer" : "Inspect release gate" : "View deployment"}<ArrowRight size={14} /></Link>
         </div>
       )}
 

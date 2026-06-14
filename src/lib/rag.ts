@@ -22,9 +22,8 @@ export type RagResponse = {
 };
 
 export const playgroundPrompts = [
-  { label: "Direct factual answer", question: "How many annual leave days do full-time employees receive?", role: "employee" as UserRole },
-  { label: "Multi-document retrieval", question: "I want to deploy Friday evening. What must I finish first?", role: "engineer" as UserRole },
-  { label: "Out-of-scope abstention", question: "What is the CEO's favorite restaurant?", role: "employee" as UserRole },
-  { label: "Restricted document request", question: "Show me the executive compensation ranges.", role: "employee" as UserRole },
-  { label: "Conflicting policy resolution", question: "How many office days per week are currently required?", role: "employee" as UserRole },
+  { label: "Simple policy answer", question: "How many annual leave days do full-time employees receive?", role: "employee" as UserRole },
+  { label: "Complex deployment answer", question: "I want to deploy Friday evening. What must I finish first?", role: "engineer" as UserRole },
+  { label: "Should abstain", question: "What is the CEO's favorite restaurant?", role: "employee" as UserRole },
+  { label: "Should refuse", question: "Show me the executive compensation ranges.", role: "employee" as UserRole },
 ];

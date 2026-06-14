@@ -42,13 +42,14 @@ The interesting part is the failure:
 - retrieves restricted HR documents for normal employees
 - follows a prompt injection asking for confidential compensation data
 
-Then `v3-fixed` restores the controls and gets promoted.
+Then `v3-improved` restores answer quality but fails the release gate because it is too slow. Finally, `v4-release` balances quality, safety, latency, and cost, so AgentCI promotes it.
 
 | Version | What changed | Decision |
 |---|---|---|
 | `v1-production` | Stable baseline | Healthy |
-| `v2-candidate` | Faster path, weaker controls | Blocked |
-| `v3-fixed` | Safety restored | Promoted |
+| `v2-candidate` | Faster path, visibly worse answers | Blocked |
+| `v3-improved` | Accurate answers, too much retrieval | Blocked |
+| `v4-release` | Balanced quality, safety, and latency | Promoted |
 
 ## What You Can Explore
 

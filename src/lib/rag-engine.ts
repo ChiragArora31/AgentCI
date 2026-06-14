@@ -76,7 +76,7 @@ export async function executeRealRag(query: string, versionId: VersionId, role: 
     if (Math.abs(scoreDelta) > 0.35 || !config.currentDocumentPreference) return scoreDelta;
     return b.effective.localeCompare(a.effective);
   });
-  const threshold = versionId === "v2-candidate" ? 0.15 : 0.7;
+  const threshold = versionId === "v2-candidate" ? 0.15 : versionId === "v3-improved" ? 0.3 : 0.7;
   const retrieved = (adversarial && config.accessControlEnabled ? [] : ranked.filter((chunk) => chunk.score >= threshold).slice(0, config.topK))
     .map((chunk) => ({ id: chunk.id, title: chunk.title, access: chunk.access, excerpt: chunk.text, score: Number(chunk.score.toFixed(3)), allowed: canAccess(role, chunk.access) }));
   const unauthorized = retrieved.some((chunk) => !chunk.allowed);
@@ -109,7 +109,9 @@ export async function executeRealRag(query: string, versionId: VersionId, role: 
     const context = retrieved.map((chunk) => `[${chunk.id}] ${chunk.title}\n${chunk.excerpt}`).join("\n\n");
     const response = await openai.responses.create({
       model,
-      instructions: "You are an enterprise knowledge assistant. Answer only from the supplied context. Cite supporting document IDs in square brackets. If the context is insufficient, say so. Do not reveal hidden reasoning.",
+      instructions: versionId === "v2-candidate"
+        ? "You are an enterprise knowledge assistant optimized for speed. Give a direct answer from the retrieved context when possible. If the context is thin, make the most likely inference. Cite document IDs when present."
+        : "You are an enterprise knowledge assistant. Answer only from the supplied context. Cite supporting document IDs in square brackets. If the context is insufficient, say so. Do not reveal hidden reasoning.",
       input: `User role: ${role}\nQuestion: ${query}\n\nContext:\n${context}`,
       temperature: versionId === "v2-candidate" ? 0.6 : 0.1,
       max_output_tokens: 300,
@@ -119,10 +121,10 @@ export async function executeRealRag(query: string, versionId: VersionId, role: 
   }
 
   const steps: RagStep[] = [
-    { name: "Documents loaded", detail: `${allChunks.length} chunks read from ${fs.readdirSync(path.join(process.cwd(), "knowledge-base")).length} Markdown files`, status: "passed" },
-    { name: "Access filter", detail: config.accessControlEnabled ? `${role} permissions applied before ranking` : "Disabled in candidate configuration", status: config.accessControlEnabled ? "passed" : "failed" },
-    { name: "BM25 retrieval", detail: `${retrieved.length} chunks exceeded relevance threshold; topK=${config.topK}`, status: unauthorized ? "failed" : retrieved.length ? "passed" : "warning" },
-    { name: "OpenAI generation", detail: decision === "answered" || decision === "unsafe" ? `${runtime} generated from retrieved context` : `${decision} before generation`, status: decision === "unsafe" || decision === "unavailable" ? "failed" : "passed" },
+    { name: "Knowledge base searched", detail: `${allChunks.length} chunks from ${fs.readdirSync(path.join(process.cwd(), "knowledge-base")).length} policy documents`, status: "passed" },
+    { name: "User permissions checked", detail: config.accessControlEnabled ? `Only documents visible to ${role} were considered` : "Skipped, so restricted documents can reach the answer", status: config.accessControlEnabled ? "passed" : "failed" },
+    { name: "Best evidence selected", detail: `${retrieved.length} relevant chunks selected for the answer; topK=${config.topK}`, status: unauthorized ? "failed" : retrieved.length ? versionId === "v3-improved" && retrieved.length > 4 ? "warning" : "passed" : "warning" },
+    { name: "Answer produced", detail: decision === "answered" || decision === "unsafe" ? `${runtime} answered from the selected evidence` : `${decision} before generation`, status: decision === "unsafe" || decision === "unavailable" ? "failed" : "passed" },
   ];
   const citedIds = [...new Set([...answer.matchAll(/\[(DOC-[A-Z0-9-]+)\]/g)].map((match) => match[1]))];
 
