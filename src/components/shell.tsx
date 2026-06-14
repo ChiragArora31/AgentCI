@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Activity, Bot, Braces, GitCompareArrows, Home, Rocket, ShieldCheck } from "lucide-react";
+import { Activity, Bot, GitCompareArrows, Home, Rocket, ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const nav = [
@@ -20,7 +21,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-[#090b10] text-slate-100">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-[220px] border-r border-white/8 bg-[#0c0f15] lg:flex lg:flex-col">
         <div className="flex h-16 items-center gap-2 border-b border-white/8 px-5">
-          <div className="flex size-8 items-center justify-center rounded-md border border-cyan-400/30 bg-cyan-400/10 text-cyan-300"><Braces size={17} /></div>
+          <div className="flex size-9 items-center justify-center overflow-hidden rounded-lg border border-cyan-400/25 bg-cyan-400/8">
+            <Image src="/agentci-logo.png" alt="AgentCI logo" width={36} height={36} className="size-full object-cover" priority />
+          </div>
           <div><div className="font-semibold tracking-tight">AgentCI</div><div className="text-[10px] uppercase tracking-[.16em] text-slate-500">Reliability control</div></div>
         </div>
         <nav className="space-y-1 p-3">
