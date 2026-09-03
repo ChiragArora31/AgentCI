@@ -7,6 +7,11 @@ on:
 permissions:
   contents: read
 
+env:
+  # Avrea currently injects --use-openssl-ca, which Node workers reject.
+  # Clear it for both jobs so the benchmark runs the same application commands.
+  NODE_OPTIONS: ""
+
 concurrency:
   group: runner-benchmark-${{ github.ref }}
   cancel-in-progress: true
