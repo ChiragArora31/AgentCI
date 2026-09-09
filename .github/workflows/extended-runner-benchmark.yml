@@ -1,7 +1,6 @@
 name: Extended CI Runner Benchmark
 
 on:
-  pull_request:
   workflow_dispatch:
 
 permissions:
